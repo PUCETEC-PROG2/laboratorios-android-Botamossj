@@ -1,36 +1,95 @@
 package ec.edu.puce.githubclient.ui.screens
 
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import ec.edu.puce.githubclient.ui.components.RepoItem
+import ec.edu.puce.githubclient.ui.theme.GithubClientTheme
+import ec.edu.puce.githubclient.viewmodels.RepoListViewModels
 
 @Composable
 fun RepoList(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: RepoListViewModels = viewModel(),
+    onNavigateToForm: () -> Unit = {}
 ) {
-    Column (
-        modifier
-    ){
-        RepoItem(
-            name = "Repositorio de Django",
-            description = "Repositorio creado en Python para Desarrollo Móvil paralelo 1471",
-            avatarUrl = "https://www.google.com/url?sa=t&source=web&rct=j&url=https%3A%2F%2Fwww.datree.io%2Fresources%2Fguide-to-django-middleware&ved=0CBUQjRxqFwoTCLD04KOTt5QDFQAAAAAdAAAAABAF&opi=89978449 ",
-            language = "Python"
-        )
+    val repos by viewModel.repos.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val errorMsg by viewModel.errorMsg.collectAsState()
 
-        RepoItem(
-            name = "Repositorio de React",
-            description = "Repositorio creado en React para Desarrollo Móvil paralelo 1471",
-            avatarUrl = "https://www.google.com/url?sa=t&source=web&rct=j&url=https%3A%2F%2Fopensource.fb.com%2Fprojects%2Freact%2F&ved=0CBUQjRxqFwoTCPjXsPySt5QDFQAAAAAdAAAAABAF&opi=89978449",
-            language = "Javascrpit"
-        )
+    Scaffold(
+        modifier = modifier,
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = onNavigateToForm,
+                shape = CircleShape,
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Agregar Repositorio"
+                )
+            }
+        }
+    ) { innerPadding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center)
+                )
+            }
 
-        RepoItem(
-            name = "Repositorio de IOS",
-            description = "Repositorio creado en Swift para Desarrollo Móvil paralelo 1471",
-            avatarUrl = "https://www.google.com/url?sa=t&source=web&rct=j&url=https%3A%2F%2Fwww.gizchina.com%2Fapple%2Fnew-wallpaper-settings-could-be-coming-to-ios-14&ved=0CBUQjRxqFwoTCNjz7JmTt5QDFQAAAAAdAAAAABAG&opi=89978449",
-            language = "Swift"
-        )
+            errorMsg?.let {
+                Text(
+                    text = it,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .padding(16.dp)
+                )
+            }
+
+            if (!isLoading && errorMsg.isNullOrBlank()) {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    items(repos) { repo ->
+                        RepoItem(repo)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun RepoListPreview() {
+    GithubClientTheme {
+        RepoList()
     }
 }
