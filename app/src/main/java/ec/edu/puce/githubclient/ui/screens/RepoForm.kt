@@ -35,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import ec.edu.puce.githubclient.models.Repository
 import ec.edu.puce.githubclient.ui.theme.GithubClientTheme
 import ec.edu.puce.githubclient.viewmodels.RepoFormViewModels
 
@@ -43,10 +44,12 @@ import ec.edu.puce.githubclient.viewmodels.RepoFormViewModels
 fun RepoForm(
     onBackClick: () -> Unit = {},
     onSaveSuccess: () -> Unit = {},
+    repository: Repository? = null,
     viewModel: RepoFormViewModels = viewModel()
 ) {
-    var repoName by remember { mutableStateOf("") }
-    var repoDescription by remember { mutableStateOf("") }
+    val isEditMode = repository != null
+    var repoName by remember(repository) { mutableStateOf(repository?.name ?: "") }
+    var repoDescription by remember(repository) { mutableStateOf(repository?.description ?: "") }
 
     val isLoading by viewModel.isLoading.collectAsState()
     val errorMsg by viewModel.errorMsg.collectAsState()
@@ -62,7 +65,9 @@ fun RepoForm(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Crear Repositorio") },
+                title = {
+                    Text(if (isEditMode) "Editar Repositorio" else "Crear Repositorio")
+                },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(
@@ -135,7 +140,19 @@ fun RepoForm(
 
                     Button(
                         onClick = {
-                            viewModel.createRepo(name = repoName, description = repoDescription)
+                            if (isEditMode) {
+                                viewModel.updateRepo(
+                                    owner = repository!!.owner.login,
+                                    repoName = repository.name,
+                                    name = repoName,
+                                    description = repoDescription
+                                )
+                            } else {
+                                viewModel.createRepo(
+                                    name = repoName,
+                                    description = repoDescription
+                                )
+                            }
                         },
                         modifier = Modifier.fillMaxWidth(),
                         enabled = !isLoading && repoName.isNotBlank()
